@@ -2,6 +2,7 @@ import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse import vstack
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
+import pandas as pd
 
 from quapy.functional import artificial_prevalence_sampling, strprev
 
@@ -25,7 +26,7 @@ class LabelledCollection:
             # lists of strings occupy too much as ndarrays (although python-objects add a heavy overload)
             self.instances = np.asarray(instances, dtype=object)
         else:
-            self.instances = np.asarray(instances)
+            self.instances = instances
         self.labels = np.asarray(labels)
         n_docs = len(self)
         if classes_ is None:
@@ -191,7 +192,7 @@ class LabelledCollection:
         :param index: np.ndarray
         :return: an instance of :class:`LabelledCollection`
         """
-        documents = self.instances[index]
+        documents = self.instances.iloc[index]
         labels = self.labels[index]
         return LabelledCollection(documents, labels, classes_=self.classes_)
 
@@ -289,6 +290,8 @@ class LabelledCollection:
             join_instances = self.instances + other.instances
         elif isinstance(self.instances, np.ndarray) and isinstance(other.instances, np.ndarray):
             join_instances = np.concatenate([self.instances, other.instances])
+        elif isinstance(self.instances, pd.DataFrame) and isinstance(other.instances, pd.DataFrame):
+            join_instances = pd.concat([self.instances, other.instances])
         else:
             raise NotImplementedError('unsupported operation for collection types')
         labels = np.concatenate([self.labels, other.labels])
@@ -320,13 +323,17 @@ class LabelledCollection:
             values for each class)
         """
         ninstances = len(self)
-        instance_type = type(self.instances[0])
-        if instance_type == list:
-            nfeats = len(self.instances[0])
-        elif instance_type == np.ndarray or issparse(self.instances):
+        if isinstance(self.instances, pd.DataFrame):
+            instance_type = type(self.instances)
             nfeats = self.instances.shape[1]
         else:
-            nfeats = '?'
+            instance_type = type(self.instances[0])
+            if instance_type == list:
+                nfeats = len(self.instances[0])
+            elif instance_type == np.ndarray or issparse(self.instances):
+                nfeats = self.instances.shape[1]
+            else:
+                nfeats = '?'
         stats_ = {'instances': ninstances,
                   'type': instance_type,
                   'features': nfeats,
