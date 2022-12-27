@@ -2,6 +2,12 @@ from . import aggregative
 from . import base
 from . import meta
 from . import non_aggregative
+from . import custom_threshold
+
+CUSTOM_THRESHOLD = {
+    custom_threshold.CCWithThreshold,
+    custom_threshold.ACCWithThreshold,
+}
 
 EXPLICIT_LOSS_MINIMIZATION_METHODS = {
     aggregative.ELM,
